@@ -37,17 +37,69 @@ export const deleteRoom = async (req, res, next) => {
 export const getRoom = async (req, res, next) => {
   try {
     const room = await Room.findById(req.params.id);
-    res.status(200).json(room);
+    res.status(200).json(room).populate("reviews");
   } catch (err) {
     next(err);
   }
 };
 
 export const getRooms = async (req, res, next) => {
+  const name = req.query.name;
   try {
-    const rooms = await Room.find();
+    let rooms;
+    if (name) {
+      let query = {};
+      query.name = { $regex: name, $options: "i" };
+      rooms = await Room.find(query);
+    } else {
+      rooms = await Room.find().populate("reviews");
+    }
     res.status(200).json(rooms);
   } catch (err) {
     next(err);
+  }
+};
+
+export const countByType = async (req, res, next) => {
+  try {
+    const meetingCount = await Room.countDocuments({ type: "meeting room" });
+    const coworkingCount = await Room.countDocuments({
+      type: "coworking space",
+    });
+    const aulaCount = await Room.countDocuments({ type: "aula" });
+
+    res.status(200).json([
+      { type: "meeting room", count: meetingCount },
+      { type: "coworking space", count: coworkingCount },
+      { type: "aula", count: aulaCount },
+    ]);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const popularRooms = async (req, res, next) => {
+  try {
+    const popular = await Room.aggregate([
+      {
+        $project: {
+          name: 1,
+          description: 1,
+          type: 1,
+          photos: 1,
+          status: 1,
+          maxPeople: 1,
+          items: 1,
+          bookingsCount: { $size: "$bookings" },
+        },
+      },
+      {
+        $sort: { bookingsCount: -1 },
+      },
+    ]).limit(4);
+
+    res.json(popular);
+  } catch (error) {
+    next(error);
   }
 };

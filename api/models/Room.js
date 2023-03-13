@@ -11,6 +11,10 @@ const RoomSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    type: {
+      type: String,
+      required: true,
+    },
     photos: {
       type: [String],
     },
@@ -20,13 +24,27 @@ const RoomSchema = new mongoose.Schema(
     },
     maxPeople: {
       type: Number,
-      required: true,
     },
+    reviews: [
+      {
+        type: mongoose.Types.ObjectId,
+        ref: "Review",
+      },
+    ],
+    bookings: [
+      {
+        type: mongoose.Types.ObjectId,
+        ref: "Booking",
+      },
+    ],
     items: {
       type: [String],
       required: true,
     },
-    roomNumbers: [{ number: Number, unavailableDates: { type: [Date] } }],
+    featured: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );

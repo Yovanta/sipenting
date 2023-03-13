@@ -1,9 +1,11 @@
 import express from "express";
 import {
+  countByType,
   createRoom,
   deleteRoom,
   getRoom,
   getRooms,
+  popularRooms,
   updateRoom,
 } from "../controllers/room.js";
 import { verifyAdmin } from "../utils/verifyToken.js";
@@ -20,9 +22,11 @@ router.put("/:id", verifyAdmin, updateRoom);
 router.delete("/:id", verifyAdmin, deleteRoom);
 
 //GET
-router.get("/:id", getRoom);
+router.get("/find/:id", getRoom);
 
 //GET ALL
 router.get("/", getRooms);
+router.get("/countByType", countByType);
+router.get("/popular", popularRooms);
 
 export default router;
