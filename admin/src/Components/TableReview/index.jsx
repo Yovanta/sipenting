@@ -1,16 +1,13 @@
 import React, { useEffect, useState } from "react";
 import ReactPaginate from "react-paginate";
 
-import ModalReplyReview from "../ModalReplyReview";
+import IconDelete from "../IconDelete";
 import SearchBar from "../SearchBar";
 
 export default function TableReview(props) {
-  const { review, replyReviews, tabelHeader } = props;
+  const { review, handleDelete, tabelHeader } = props;
 
   const PER_PAGE = 5;
-  const setDataReview = (review) => {
-    console.log("ini data booking di table review", review);
-  };
 
   //search
   const [searchValue, setSearchValue] = useState("");
@@ -40,14 +37,14 @@ export default function TableReview(props) {
   return (
     <div>
       <div className="flex flex-col mb-6">
-        <div className="inline-block min-w-fit p-2">
+        <div className="inline-block w-full p-4">
           <div className="overflow-hidden">
             <div className="flex flex-row justify-between">
               <SearchBar _handleSearch={_handleSearch} />
               <div className="flex gap-2 items-center">
                 <p className="text-primary-gray2">{`${offset + 1} - ${
                   offset + PER_PAGE
-                } of ${review.length}`}</p>
+                } of ${review?.length}`}</p>
                 <ReactPaginate
                   previousLabel="<"
                   nextLabel=">"
@@ -61,11 +58,11 @@ export default function TableReview(props) {
                 />
               </div>
             </div>
-            <table className="ml-4 table-fixed min-w-fit">
+            <table className=" w-full">
               <thead className="">
                 <tr>
                   {tabelHeader.map((item) => (
-                    <th className="text-base font-medium text-textColor-black px-6 py-4 text-left">
+                    <th className="text-base font-medium px-6 py-4 text-center border-y-2">
                       {item}
                     </th>
                   ))}
@@ -74,44 +71,43 @@ export default function TableReview(props) {
               <tbody>
                 {review
                   ?.filter((item) => {
-                    return item.review
+                    return item.userId.username
                       .toLowerCase()
                       .includes(searchValue.toLowerCase());
                   })
+                  .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
                   .slice(offset, offset + PER_PAGE)
                   .map((value, reviewIdx) => (
                     <tr
                       className=" odd:bg-secondary-softblue text-primary-gray"
                       key={reviewIdx}
-                      data-key={value.review_id}
+                      data-key={value._id}
                     >
                       <td className="text-base text-textColor-blackThin px-6 py-4 ">
-                        {/* {value.review_id} */}
+                        {value._id}
                       </td>
                       <td className="px-6 py-4 whitespace-no-wrap">
-                        {/* {value.user} */}
+                        {value.room.name}
+                      </td>
+                      <td className="px-6 py-4 whitespace-no-wrap">
+                        {value.userId.username}
                       </td>
                       <td className="text-base text-textColor-blackThin px-6 py-4 ">
-                        {/* {value.room.room_name} */}
+                        ⭐️ {value.rating}
                       </td>
                       <td className="text-base text-textColor-blackThin px-6 py-4 ">
-                        {/* {value.reviewer.nama_customer} */}
+                        {value.reviewText}
                       </td>
-                      <td className="text-base text-textColor-blackThin px-6 py-4 ">
-                        {/* {value.review} */}
+                      <td className="flex justify-center gap-2 py-4 whitespace-nowrap">
+                        <button onClick={() => handleDelete(value._id)}>
+                          <IconDelete />
+                        </button>
                       </td>
                     </tr>
                   ))}
               </tbody>
             </table>
           </div>
-          {/* {showModal ? (
-            <ModalReplyReview
-              showModal={showModal}
-              handleClose={_handleCloseModal}
-              review={review}
-            />
-          ) : null} */}
         </div>
       </div>
     </div>

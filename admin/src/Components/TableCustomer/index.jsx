@@ -5,7 +5,7 @@ import IconDelete from "../IconDelete";
 import SearchBar from "../SearchBar";
 
 export default function TableCustomer(props) {
-  const { customer, tabelHeader } = props;
+  const { customer, tabelHeader, handleDelete } = props;
 
   const PER_PAGE = 5;
 
@@ -38,14 +38,14 @@ export default function TableCustomer(props) {
   return (
     <div>
       <div className="flex flex-col mb-6">
-        <div className="inline-block min-w-fit p-2">
+        <div className="inline-block w-full p-4">
           <div className="overflow-hidden">
             <div className="flex flex-row justify-between">
               <SearchBar _handleSearch={_handleSearch} />
               <div className="flex gap-2 items-center">
                 <p className="text-primary-gray2">{`${offset + 1} - ${
                   offset + PER_PAGE
-                } of ${customer.length}`}</p>
+                } of ${customer?.length}`}</p>
                 <ReactPaginate
                   previousLabel="<"
                   nextLabel=">"
@@ -59,11 +59,11 @@ export default function TableCustomer(props) {
                 />
               </div>
             </div>
-            <table className="table-fixed min-w-fit">
+            <table className="w-full">
               <thead className="bg-white">
                 <tr>
                   {tabelHeader.map((item) => (
-                    <th className="text-base font-medium text-textColor-black px-6 py-4 text-left">
+                    <th className="text-base font-medium text-primary-black px-6 py-4 text-left border-y-2">
                       {item}
                     </th>
                   ))}
@@ -71,34 +71,42 @@ export default function TableCustomer(props) {
               </thead>
 
               <tbody>
-                {customer
-                  ?.filter((item) => {
-                    return item.nama_customer
-                      .toLowerCase()
-                      .includes(searchValue.toLowerCase());
-                  })
-                  .slice(offset, offset + PER_PAGE)
-                  .map((customer, customerIdx) => (
-                    <tr className="odd:bg-secondary-softblue text-primary-gray">
-                      <td className="px-6 py-4 whitespace-no-wrap">
-                        {/* {customer.nama_customer} */}
-                      </td>
-                      <td className="text-base text-textColor-blackThin px-6 py-4 whitespace-nowrap">
-                        {/* {customer.username} */}
-                      </td>
-                      <td className="text-base text-textColor-blackThin px-6 py-4 whitespace-nowrap">
-                        {/* {customer.email} */}
-                      </td>
-                      <td className="text-base text-textColor-blackThin  px-6 py-4 whitespace-nowrap">
-                        {/* {customer.address} */}
-                      </td>
-                      <td className="flex justify-center gap-8 px-6 py-4 whitespace-nowrap">
-                        <button>
-                          <IconDelete />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                {customer &&
+                  customer
+                    .filter((item) => item.isAdmin !== true)
+                    ?.filter((item) => {
+                      return item.name
+                        .toLowerCase()
+                        .includes(searchValue.toLowerCase());
+                    })
+                    .sort(
+                      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+                    )
+                    .slice(offset, offset + PER_PAGE)
+                    .map((customer, customerIdx) => (
+                      <tr className="odd:bg-secondary-softblue text-primary-gray">
+                        <td className="px-6 py-4 whitespace-no-wrap">
+                          {customer._id}
+                        </td>
+                        <td className="px-6 py-4 whitespace-no-wrap">
+                          {customer.name}
+                        </td>
+                        <td className="text-base text-textColor-blackThin px-6 py-4 whitespace-nowrap">
+                          {customer.username}
+                        </td>
+                        <td className="text-base text-textColor-blackThin px-6 py-4 whitespace-nowrap">
+                          {customer.email}
+                        </td>
+                        <td className="text-base text-textColor-blackThin  px-6 py-4 whitespace-nowrap">
+                          {customer.occupation}
+                        </td>
+                        <td className="flex justify-center gap-8 px-6 py-4 whitespace-nowrap">
+                          <button onClick={() => handleDelete(customer._id)}>
+                            <IconDelete />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
               </tbody>
             </table>
           </div>

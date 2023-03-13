@@ -1,29 +1,33 @@
-import React, { useEffect, useState } from "react";
-import Logo from "../../Components/Logo";
-import { AiFillEye, AiFillEyeInvisible } from "react-icons/ai";
-// import Axios from "axios";
-import FormInput from "../../Components/FormInput";
-import Button from "../../Components/Button";
-import Background from "../../Assets/Admin.png";
+import React, { useEffect, useState, useContext } from "react";
 import styled from "@emotion/styled";
-import Swal from "sweetalert2";
-// import { Link } from 'react-router-dom';
-import { useNavigate } from "react-router-dom";
-// import { AuthLogin } from "../../API/APIAuth";
+import axios from "axios";
+import { AiFillEye, AiFillEyeInvisible } from "react-icons/ai";
+
+import Background from "../../Assets/bg.png";
+import Button from "../../Components/Button";
+import FormInput from "../../Components/FormInput";
+import { AuthContext } from "../../Context/AuthContext";
+import { useNavigate } from "react-router";
 
 export default function Login() {
-  const navigate = useNavigate();
+  const [credentials, setCredentials] = useState({
+    username: undefined,
+    password: undefined,
+  });
 
-  const [isEmptyEmail, setIsEmptyEmail] = useState(false);
+  const { loading, error, dispatch } = useContext(AuthContext);
+
+  const [isEmptyusername, setIsEmptyUsername] = useState(false);
   const [isEmptyPassword, setIsEmptyPassword] = useState(false);
+  const [userIdToken, setUserIdToken] = useState("");
   const [inputs, setInputs] = useState([
     {
       id: 0,
-      type: "email",
-      placeholder: "Email",
+      type: "username",
+      placeholder: "Your username...",
       value: "",
-      pattern: "^[a-z0-9._%+-]+@[a-z0-9.-]+.[a-z]{2,4}$",
-      err: "Email must be valid",
+      pattern: "/^[a-zA-Z0-9]+$/",
+      err: "username must be valid",
     },
     {
       id: 1,
@@ -35,52 +39,52 @@ export default function Login() {
     },
   ]);
   const [msg, setMsg] = useState("");
+
   const [isPasswordShown, setIsPasswordShown] = useState(false);
+
   const handleClickPassword = () => {
     setIsPasswordShown(!isPasswordShown);
   };
 
   const handleChange = (value, index) => {
     const newInputs = { ...inputs[index], value };
-    // console.log(newInputs);
     const newInputsArr = [...inputs];
     newInputsArr[index] = newInputs;
     setInputs(newInputsArr);
+
+    const valuesArr = newInputsArr.map((input) => input.value);
+    const newCredentials = {
+      username: valuesArr[0],
+      password: valuesArr[1],
+    };
+    setCredentials(newCredentials);
   };
-//   const onLogin = async (e) => {
-//     e.preventDefault();
-//     if (inputs[0].value && inputs[1].value) {
-//       const data = {
-//         password: inputs[1].value,
-//         email: inputs[0].value,
-//       };
-//       setIsEmptyEmail(false);
-//       setIsEmptyPassword(false);
-//       try {
-//         await AuthLogin(data).then((response) => {
-//           if (response) {
-//             Swal.fire({
-//               title: "Login Success",
-//               confirmButtonColor: "#4C35E0",
-//             });
-//             navigate("/dashboard");
-//           }
-//         });
-//       } catch (error) {
-//         if (error.response) {
-//           setMsg(error.response.data.message);
-//           Swal.fire({
-//             title: "Account not found",
-//             text: error.response.data.message,
-//             confirmButtonColor: "#4C35E0",
-//           });
-//         }
-//       }
-//     } else {
-//       setIsEmptyEmail(true);
-//       setIsEmptyPassword(true);
-//     }
-//   };
+
+  console.log(inputs);
+
+  const navigate = useNavigate();
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    dispatch({ type: "LOGIN_START" });
+    try {
+      const res = await axios.post("/auth/login", credentials);
+      if (res.data.isAdmin) {
+        dispatch({
+          type: "LOGIN_SUCCESS",
+          payload: res.data.details,
+        });
+        navigate("/dashboard");
+      } else {
+        dispatch({
+          type: "LOGIN_FAIL",
+          payload: { message: "You are not allowed" },
+        });
+      }
+    } catch (err) {
+      dispatch({ type: "LOGIN_FAIL", payload: err.response.data });
+    }
+  };
 
   const backgroundImage = {
     backgroundImage: `url(${Background})`,
@@ -89,47 +93,37 @@ export default function Login() {
 
   useEffect(() => {
     if (inputs[0].value.match(inputs[0].pattern)) {
-      setIsEmptyEmail(false);
+      setIsEmptyUsername(false);
     }
     if (inputs[1].value.match(inputs[1].pattern)) {
       setIsEmptyPassword(false);
     }
   }, [inputs]);
-  console.log(isEmptyEmail);
-  console.log(isEmptyPassword);
 
   return (
     <LoginWrap style={backgroundImage}>
       <div className="flex h-screen">
-        <form
-        //   onSubmit={onLogin}
-          className="max-w-xl w-full m-auto bg-current bg-secondary-softblue rounded-lg shadow-lg shadow-primary-gray3 p-10 "
-        >
-          <div className="flex justify-center mb-4">
-            <Logo />
-          </div>
-          <div>
-            <h1
-              style={{
-                textAlign: "start",
-              }}
-              className="py-2 text-primary-gray"
-            >
-              login as admin!
-            </h1>
-          </div>
+        <form className="max-w-xl w-full m-auto bg-current bg-secondary-softblue rounded-lg shadow-lg shadow-primary-gray3 p-10 ">
+          <div className="flex flex-col gap-4 justify-center items-center text-center mb-4">
+            {/* <Logo /> */}
+            <h1 className="text-3xl font-bold"> Sign in to Admin Account</h1>
 
+            {error && (
+              <span className="text-xs text-primary-red">{error.message}</span>
+            )}
+          </div>
           <div>
             {inputs.map((input, inputIdx) => (
               <div key={inputIdx}>
                 <FormInput
                   className={`my-0 ${
-                    isEmptyEmail || isEmptyPassword
+                    isEmptyusername || isEmptyPassword
                       ? "peer-invalid:visible border-primary-red border-2"
                       : "peer-valid:visible border-secondary-softblue border-2"
                   }`}
                   {...input}
                   value={input.value}
+                  id={input.type}
                   type={
                     input.type === "password"
                       ? isPasswordShown
@@ -150,10 +144,10 @@ export default function Login() {
                   </span>
                 )}
 
-                {input.type === "email" ? (
+                {input.type === "username" ? (
                   <p
                     className={`${
-                      isEmptyEmail
+                      isEmptyusername
                         ? "peer-invalid:visible text-primary-red "
                         : "invisible"
                     }`}
@@ -175,39 +169,18 @@ export default function Login() {
               </div>
             ))}
 
-            <div
-              style={{
-                textAlign: "end",
-              }}
-              className="py-2"
-            >
+            <div className="py-2 items-end">
               <a href="/forgot">Forgot password?</a>
             </div>
 
             <Button
-              className="rounded
-                                w-full
-                                border-1
-                                bg-primary-blue text-secondary-softblue"
+              className="rounded w-full border-1 bg-primary-blue text-secondary-softblue"
               type="button"
-            //   onClick={onLogin}
+              onClick={handleLogin}
+              disabled={loading}
             >
               Login
             </Button>
-
-            <div
-              style={{
-                textAlign: "center",
-              }}
-              className="mt-4"
-            >
-              <p className="text-sm">
-                Don't have an account?{" "}
-                <a className="text-primary-blue" href="/register">
-                  Register
-                </a>
-              </p>
-            </div>
           </div>
         </form>
       </div>

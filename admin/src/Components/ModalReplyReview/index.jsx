@@ -5,7 +5,7 @@ import FormWrapModal from "../FormWrapModal";
 import Button from "../Button";
 
 export default function ModalReplyReview(props) {
-  const { handleClose, showModal } = props;
+  const { handleCloseModal, openModal, review } = props;
 
   const [replyReview, setReplyReview] = useState("");
   const [msg, setMsg] = useState("");
@@ -20,7 +20,7 @@ export default function ModalReplyReview(props) {
     }
   };
 
-  if (!showModal) return null;
+  if (!openModal) return null;
   return (
     <>
       <div className="fixed flex-col gap-10 inset-0 bg-primary-black bg-opacity-30 backdrop-blur-md flex justify-center items-center">
@@ -115,7 +115,7 @@ export default function ModalReplyReview(props) {
           <Button
             className="font-bold bg-secondary-softblue text-primary-blue uppercase px-6 py-3 text-sm rounded shadow mr-1 mb-1"
             type="button"
-            onClick={handleClose}
+            onClick={handleCloseModal}
           >
             Close
           </Button>

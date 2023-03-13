@@ -6,6 +6,7 @@ module.exports = {
       primary: {
         blue: "#4C35E0",
         green: "#6EB762",
+        successful: "#B7FFAB",
         mossgreen: "#4BAAA5",
         orange: "#FFCA42",
         white: "#FFFFFF",
@@ -14,7 +15,8 @@ module.exports = {
         gray: "#5C5C5C",
       },
       secondary: {
-        green: "#B7FFAB",
+        successful: "#D3FFCC",
+        error: "#FFC0C0",
         yellow: "#FFEEC3",
         softblue: "#EDEAFF",
         white2: "#FDFEFF",
@@ -22,8 +24,9 @@ module.exports = {
         blue2: "#4C34E9",
         gray2: "#888686",
         gray3: "#D7D7D7",
-      }
+        blackrgba: "rgba(0, 0, 0, 0.5)",
+      },
     },
   },
   plugins: [],
-}
+};

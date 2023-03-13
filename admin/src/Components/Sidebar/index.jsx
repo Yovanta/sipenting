@@ -1,20 +1,23 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
+import Cookies from "js-cookie";
+
 import { SidebarData } from "./SidebarData";
 import Logo from "../Logo";
 import { FaBars } from "react-icons/fa";
+import { AuthContext } from "../../Context/AuthContext";
 
 const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(true);
   const toggle = () => setIsOpen(!isOpen);
 
-  let navigate = useNavigate();
+  const navigate = useNavigate();
 
+  const { dispatch } = useContext(AuthContext);
   //logout
   const logout = (e) => {
     e.preventDefault();
-
     Swal.fire({
       title: "Yakin logout?",
       text: "Jika ingin masuk silahkan login kembali!",
@@ -25,7 +28,9 @@ const Sidebar = () => {
       confirmButtonText: "Yes, logout!",
     }).then((result) => {
       if (result.isConfirmed) {
+        dispatch({ type: "LOGOUT" }); 
         localStorage.removeItem("user");
+        Cookies.remove("access_token");
         navigate("/");
         Swal.fire("Berhasil!", "success");
       }
@@ -47,7 +52,7 @@ const Sidebar = () => {
               to={item.path}
               key={index}
               className="text-primary-gray link my-2"
-              activeclassName="active"
+              activeclassname="active"
             >
               <div className="icon">{item.icon}</div>
               <div
@@ -61,7 +66,7 @@ const Sidebar = () => {
         </div>
         <hr className="mx-3 text-primary-gray3" />
         <div className="icon my-2">
-          <NavLink onClick={logout} to="/" className="link">
+          <NavLink onClick={logout} className="link">
             <svg
               width="24"
               height="24"
