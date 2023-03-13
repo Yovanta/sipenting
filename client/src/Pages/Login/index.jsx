@@ -1,28 +1,33 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useContext } from "react";
 import styled from "@emotion/styled";
-import firebase from "firebase/compat/app";
-import { FcGoogle } from "react-icons/fc";
+import axios from "axios";
 import { AiFillEye, AiFillEyeInvisible } from "react-icons/ai";
 
-import { signInWithFirebase, signInWithGoogle } from "../../firebase/utils";
 import Background from "../../Assets/bg.png";
-import CustomButton from "../../Components/CustomButton";
 import Button from "../../Components/Button";
 import FormInput from "../../Components/FormInput";
-import MutationSignIn from "../../GraphQL/Hooks/SignIn";
+import { AuthContext } from "../../Context/AuthContext";
+import { useNavigate } from "react-router";
+import Swal from "sweetalert2";
 
 export default function Login() {
-  const [isEmptyEmail, setIsEmptyEmail] = useState(false);
-  const [isEmptyPassword, setIsEmptyPassword] = useState(false);
+  const [credentials, setCredentials] = useState({
+    username: undefined,
+    password: undefined,
+  });
+
+  const { loading, error, dispatch } = useContext(AuthContext);
+
   const [userIdToken, setUserIdToken] = useState("");
   const [inputs, setInputs] = useState([
     {
       id: 0,
-      type: "email",
-      placeholder: "Email",
+      type: "username",
+      placeholder: "Your username...",
       value: "",
-      pattern: "^[a-z0-9._%+-]+@[a-z0-9.-]+.[a-z]{2,4}$",
-      err: "Email must be valid",
+      pattern: "^[A-Za-z0-9]{4,20}$",
+      err: "username must be valid",
+      showError: false,
     },
     {
       id: 1,
@@ -31,6 +36,7 @@ export default function Login() {
       value: "",
       pattern: "^[A-Za-z0-9]{6,12}$",
       err: "Must contain at least 6 or more characters",
+      showError: false,
     },
   ]);
   const [msg, setMsg] = useState("");
@@ -42,70 +48,54 @@ export default function Login() {
   };
 
   const handleChange = (value, index) => {
-    const newInputs = { ...inputs[index], value };
-    const newInputsArr = [...inputs];
-    newInputsArr[index] = newInputs;
-    setInputs(newInputsArr);
-    console.log(newInputsArr);
+    const newInputs = inputs.map((input, i) => {
+      if (i === index) {
+        const isValid = new RegExp(input.pattern).test(value);
+        return { ...input, value, showError: !isValid };
+      }
+      return input;
+    });
+    setInputs(newInputs);
+
+    const valuesArr = newInputs.map((input) => input.value);
+    const newCredentials = {
+      username: valuesArr[0],
+      password: valuesArr[1],
+    };
+    setCredentials(newCredentials);
   };
 
-  const { addUser, data, error } = MutationSignIn();
-  // const handleSignIn = async (e) => {
-  //   e.preventDefault();
-  //   if (inputs[0].value && inputs[1].value) {
-  //     const data = {
-  //       email: inputs[0].value,
-  //       password: inputs[1].value,
-  //     };
-  //     setIsEmptyEmail(false);
-  //     setIsEmptyPassword(false);
-  //     try {
-  //       const response = await signInWithFirebase(data);
-  //       console.log(response);
-  //       addUser({
-  //         variables: {
-  //           email: response.email,
-  //           password: response.password,
-  //           token: response.idToken,
-  //         },
-  //       });
-  //     } catch (error) {
-  //       console.error(error.message);
-  //     }
-  //   }
-  // };
+  const navigate = useNavigate();
 
-  // const handleLoginGoogle = async (e) => {
-  //   const provider = new firebase.auth.GoogleAuthProvider();
-  //   try {
-  //     const { user } = await firebase.auth().signInWithPopup(provider);
-  //     if (user) {
-  //       await addUser({
-  //         variables: {
-  //           email: user.email,
-  //           password: user.password,
-  //         },
-  //       });
-  //     }
-  //   } catch (error) {
-  //     // setIsError(true);
-  //     console.error(error.message);
-  //   }
-  // };
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    dispatch({ type: "LOGIN_START" });
+    try {
+      const res = await axios.post("/auth/login", credentials);
+      dispatch({
+        type: "LOGIN_SUCCESS",
+        payload: res.data.details,
+      });
+       Swal.fire({
+          icon: "success",
+          title: "Login Success",
+          text: "You have successfully logged!",
+        });
+      navigate("/");
+    } catch (err) {
+      dispatch({ type: "LOGIN_FAIL", payload: err.response.data });
+       Swal.fire({
+          icon: "error",
+          title: "Login Failed",
+          text: err.response.data.message,
+        });
+    }
+  };
 
   const backgroundImage = {
     backgroundImage: `url(${Background})`,
     backgroundSize: "100% 100%",
   };
-
-  useEffect(() => {
-    if (inputs[0].value.match(inputs[0].pattern)) {
-      setIsEmptyEmail(false);
-    }
-    if (inputs[1].value.match(inputs[1].pattern)) {
-      setIsEmptyPassword(false);
-    }
-  }, [inputs]);
 
   return (
     <LoginWrap style={backgroundImage}>
@@ -114,33 +104,25 @@ export default function Login() {
           <div className="flex flex-col gap-4 justify-center items-center text-center mb-4">
             {/* <Logo /> */}
             <h1 className="text-3xl font-bold"> Sign in to Account</h1>
-            <CustomButton
-              // onClick={handleLoginGoogle}
-              className="flex flex-wrap max-w-fit p-2 gap-2 items-center rounded-sm bg-primary-blue text-primary-white"
-            >
-              <div className="bg-primary-white p-2">
-                <FcGoogle />
-              </div>
-              <h2 className="font-bold">Sign in with Google</h2>
-            </CustomButton>
-            <div className="w-full flex items-center gap-2">
-              <hr className="w-1/2 border-1" />
-              <h3 className="font-bold">OR</h3>
-              <hr className="w-1/2 border-1" />
-            </div>
-            <p>Enter your email address and password</p>
+
+            {error && (
+              <span className="text-xs text-primary-red">{error.message}</span>
+            )}
           </div>
           <div>
             {inputs.map((input, inputIdx) => (
               <div key={inputIdx}>
                 <FormInput
-                  className={`my-0 ${
-                    isEmptyEmail || isEmptyPassword
+                  className={`peer m-0 ${
+                    input.showError
                       ? "peer-invalid:visible border-primary-red border-2"
                       : "peer-valid:visible border-secondary-softblue border-2"
                   }`}
                   {...input}
                   value={input.value}
+                  id={input.type}
+                  pattern={input.pattern}
+                  required
                   type={
                     input.type === "password"
                       ? isPasswordShown
@@ -148,7 +130,6 @@ export default function Login() {
                         : "password"
                       : input.type
                   }
-                  required
                   onChange={(e) => handleChange(e.target.value, inputIdx)}
                 />
 
@@ -161,44 +142,27 @@ export default function Login() {
                   </span>
                 )}
 
-                {input.type === "email" ? (
-                  <p
-                    className={`${
-                      isEmptyEmail
-                        ? "peer-invalid:visible text-primary-red "
-                        : "invisible"
-                    }`}
-                  >
-                    {input.err}
-                  </p>
-                ) : null}
-                {input.type === "password" ? (
-                  <p
-                    className={`${
-                      isEmptyPassword
-                        ? "peer-invalid:visible text-primary-red "
-                        : "invisible"
-                    }`}
-                  >
-                    {input.err}
-                  </p>
-                ) : null}
+                <p
+                  className={`pb-2 ${
+                    input.showError
+                      ? "peer-invalid:visible text-primary-red invisible"
+                      : "invisible"
+                  }  text-sm`}
+                >
+                  {input.err}
+                </p>
               </div>
             ))}
 
-            <div
-              style={{
-                textAlign: "end",
-              }}
-              className="py-2"
-            >
+            <div className="py-2 items-end">
               <a href="/forgot">Forgot password?</a>
             </div>
 
             <Button
               className="rounded w-full border-1 bg-primary-blue text-secondary-softblue"
               type="button"
-              // onClick={handleSignIn}
+              onClick={handleLogin}
+              disabled={loading}
             >
               Login
             </Button>

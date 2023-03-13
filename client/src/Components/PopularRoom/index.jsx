@@ -1,22 +1,18 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import Button from "../Button";
+import useFetch from "../../Hooks/useFetch";
 
-export default function RoomContainer(props) {
-  const { dataRoom } = props;
+export default function PopularRoom() {
+  const { data, loading, error } = useFetch("/rooms/popular");
+
   return (
     <>
-      {dataRoom?.map((room, index) => (
+      {data?.map((room, index) => (
         <div
           key={index}
           className="flex flex-col items-center bg-primary-white rounded-lg mt-2 shadow-xl w-80 pb-2 gap-2"
         >
-          <img
-            src={room.photos[0]}
-            alt=""
-            width="328"
-            className="rounded-lg"
-          />
+          <img src={room.photos[0]} alt="" width="328" className="rounded-lg" />
           <div className="flex gap-8 justify-between">
             <div>
               <h1 className="font-bold">{room.name}</h1>
@@ -28,15 +24,14 @@ export default function RoomContainer(props) {
               <div className="flex text-xs">
                 ⭐️ rating {room.rating} (4 review)
               </div>
+
               {room.status ? (
                 <button className="bg-secondary-error text-primary-red font-bold py-2 px-6 rounded-full">
                   Booked
                 </button>
               ) : (
                 <button className="bg-secondary-successful text-primary-green font-bold py-2 px-6 rounded-full">
-                  <Link to={`/rooms/${room._id}`}>
-                  Available
-                </Link>
+                  <Link to={`/rooms/${room._id}`}>Available</Link>
                 </button>
               )}
             </div>

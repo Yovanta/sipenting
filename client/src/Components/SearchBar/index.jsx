@@ -1,37 +1,133 @@
-import React from "react";
+import React, { useContext, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { format } from "date-fns";
+import { DateRange } from "react-date-range";
+import "react-date-range/dist/styles.css";
+import "react-date-range/dist/theme/default.css"; 
+import { BiSearchAlt, BiCalendarEvent } from "react-icons/bi";
+import { MdMeetingRoom } from "react-icons/md";
+
+import { SearchContext } from "../../Context/SearchContext";
+import Button from "../Button";
 
 export default function SearchBar() {
+  const [name, setName] = useState("");
+  const [openDate, setOpenDate] = useState(false);
+  const [dates, setDates] = useState([
+    {
+      startDate: new Date(),
+      endDate: new Date(),
+      key: "selection",
+    },
+  ]);
+
+  const { dispatch } = useContext(SearchContext);
+
+  const navigate = useNavigate();
+  const handleSearch = () => {
+    dispatch({ type: "NEW_SEARCH", payload: { name, dates } });
+    navigate(`/rooms?${name}`, { state: { name, dates } });
+  };
+  console.log(dates);
+
+  //search
+  // const [filteredData, setFilteredData] = useState([]);
+  // const [wordEntered, setWordEntered] = useState("");
+
+  // const handleFilter = (e) => {
+  //   const searchWord = e.target.value;
+  //   setWordEntered(searchWord);
+  //   const newFilter = dataRoom.filter((value) => {
+  //     return value.name.toLowerCase().includes(searchWord.toLowerCase());
+  //   });
+
+  //   if (searchWord === "") {
+  //     setFilteredData([]);
+  //   } else {
+  //     setFilteredData(newFilter);
+  //   }
+  // };
+
+  // const clearInput = () => {
+  //   setFilteredData([]);
+  //   setWordEntered("");
+  // };
+
   return (
     <>
-      <div className="ml-2 mt-2 w-3/4 justify-start ">
-        <div className="w-full">
-          <div className="input-group relative flex items-stretch w-full mb-2 bg-primary-white border border-solid hover:border-primary-blue border-primary-gray3 rounded-lg p-2 shadow-xl">
-            <svg
-              aria-hidden="true"
-              focusable="false"
-              data-prefix="fas"
-              data-icon="search"
-              className="w-4 text-primary-gray"
-              role="img"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 512 512"
-            >
-              <path
-                fill="currentColor"
-                d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128 0 70.7-57.2 128-128 128z"
-              ></path>
-            </svg>
-
+      <div className="ml-2 mt-2 w-4/5">
+        {/* <div className="w-full"> */}
+        <div className="input-group relative flex items-stretch justify-between w-full mb-2 bg-primary-white border border-solid hover:border-primary-blue rounded-lg p-2 shadow-xl">
+          <div className="flex w-1/2 items-center">
+            <MdMeetingRoom />
             <input
               type="search"
-              className="form-control relative flex-auto min-w-0 block w-full px-3 py-1.5 text-xs text-primary-gray bg-primary-white bg-clip-padding rounded-md transition ease-in-out m-0 focus:text-primary-gray focus:bg-primary-white focus:border-primary-white focus:outline-none"
-              placeholder="Cari coworking space disini..."
+              className="form-control relative block w-full px-3 py-1.5 text-xs text-primary-gray bg-primary-white bg-clip-padding rounded-md transition ease-in-out m-0 focus:text-primary-gray focus:bg-primary-white focus:border-primary-white focus:outline-none"
+              placeholder="Cari ruangan disini..."
               aria-label="Search"
               aria-describedby="button-addon3"
+              onChange={(e) => setName(e.target.value)}
             />
           </div>
+
+          <div className="flex items-center gap-2">
+            <BiCalendarEvent />
+            <span
+              onClick={() => setOpenDate(!openDate)}
+              className="text-secondary-gray cursor-pointer"
+            >{`${format(dates[0].startDate, "MM/dd/yyyy")} to ${format(
+              dates[0].endDate,
+              "MM/dd/yyyy"
+            )}`}</span>
+            {openDate && (
+              <DateRange
+                editableDateInputs={true}
+                onChange={(item) => setDates([item.selection])}
+                moveRangeOnFirstSelection={false}
+                ranges={dates}
+                className="absolute z-10 top-10"
+                minDate={new Date()}
+              />
+            )}
+          </div>
+
+          <div className="flex">
+            <Button
+              className="w-1/6 flex gap-2 items-center justify-end mr-2 text-primary-white bg-primary-blue rounded-lg"
+              onClick={handleSearch}
+            >
+              <BiSearchAlt className="w-4 " />
+              Search
+            </Button>
+          </div>
+          {/* {filteredData.length === 0 ? (
+            ) : (
+              <div className="w-1/6 flex items-center justify-end mr-2">
+                <MdOutlineCancel
+                  onClick={clearInput}
+                  className="w-4 text-primary-gray"
+                />
+              </div>
+            )} */}
         </div>
+
+        {/* {filteredData.length !== 0 && (
+            <>
+              {filteredData?.map((value, key) => {
+                return (
+                  <NavLink
+                    to={`/detail/${value._id}`}
+                    state={{ value }}
+                    onClick={value._id}
+                  >
+                    <SearchItem value={value} />
+                  </NavLink>
+                );
+              })}
+            </>
+          )} */}
       </div>
+      {/* </div> */}
     </>
   );
 }

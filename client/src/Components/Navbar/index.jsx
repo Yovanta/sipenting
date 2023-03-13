@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { FaBars } from "react-icons/fa";
 import Button from "../Button";
 import Logo from "../Logo";
@@ -6,13 +6,15 @@ import { Link, NavLink } from "react-router-dom";
 import { AiOutlineClose } from "react-icons/ai";
 import styled from "@emotion/styled";
 
-export default function Navbar(props) {
-  const { currentUser } = props;
+import { AuthContext } from "../../Context/AuthContext";
 
+export default function Navbar() {
   const [click, setClick] = useState(false);
   const handleClickMenu = () => {
     setClick(!click);
   };
+
+  const { user } = useContext(AuthContext);
 
   return (
     <>
@@ -47,14 +49,13 @@ export default function Navbar(props) {
                   </NavLink>
                 </WrapperMenu>
                 <WrapperButton>
-                  {currentUser && (
-                    <Link to="/profile" currentUser={currentUser}>
+                  {user ? (
+                    <Link to="/profile">
                       <Button className="bg-primary-blue text-primary-white">
-                        Profile
+                        {user.username}
                       </Button>
                     </Link>
-                  )}
-                  {!currentUser && (
+                  ) : (
                     <>
                       <Link to="/login">
                         <Button className="bg-primary-blue text-primary-white">
@@ -65,7 +66,7 @@ export default function Navbar(props) {
                         <Button className="bg-primary-white text-primary-blue">
                           Register
                         </Button>
-                      </Link>
+                      </Link>{" "}
                     </>
                   )}
                 </WrapperButton>

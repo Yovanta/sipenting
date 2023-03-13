@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useContext } from "react";
 import { AiFillEye, AiFillEyeInvisible } from "react-icons/ai";
 import { Link, useNavigate } from "react-router-dom";
 import styled from "@emotion/styled";
@@ -7,19 +7,30 @@ import Swal from "sweetalert2";
 import background from "../../Assets/bg.png";
 import Button from "../../Components/Button";
 import FormInput from "../../Components/FormInput";
-import { signUpWithFirebase } from "../../firebase/utils";
+import FormSelectWrap from "../../Components/FormSelectWrap";
+import { AuthContext } from "../../Context/AuthContext";
+import axios from "axios";
 
 export default function Register() {
+  const navigate = useNavigate();
+
+  const { dispatch } = useContext(AuthContext);
+
+  const [data, setData] = useState({
+    name: "",
+    username: "",
+    email: "",
+    password: "",
+    occupation: "",
+    isAdmin: false,
+  });
+
   const [isPasswordShown, setIsPasswordShown] = useState(false);
   const handleClickPassword = () => {
     setIsPasswordShown(!isPasswordShown);
   };
 
   const [msg, setMsg] = useState("");
-  const navigate = useNavigate();
-  const [isEmptyName, setIsEmptyName] = useState(false);
-  const [isEmptyEmail, setIsEmptyEmail] = useState(false);
-  const [isEmptyPassword, setIsEmptyPassword] = useState(false);
 
   const [inputs, setInputs] = useState([
     {
@@ -30,95 +41,106 @@ export default function Register() {
       value: "",
       pattern: "^[A-Za-z0-9 ]{4,30}$",
       err: "Must contain at least 4 characters",
+      showError: false,
     },
     {
       id: 1,
+      name: "username",
+      type: "text",
+      placeholder: "Username",
+      value: "",
+      pattern: "^[A-Za-z0-9]{4,20}$",
+      err: "Must contain at least 4 characters",
+      showError: false,
+    },
+    {
+      id: 2,
       name: "email",
       type: "email",
       placeholder: "Email",
       value: "",
       pattern: "^[a-z0-9._%+-]+@[a-z0-9.-]+.[a-z]{2,4}$",
       err: "Email must be valid",
+      showError: false,
     },
     {
-      id: 2,
+      id: 3,
       name: "password",
       type: "password",
       placeholder: "Password",
       value: "",
       pattern: "^[A-Za-z0-9]{6,20}$",
       err: "Must contain at least 6 or more characters",
+      showError: false,
+    },
+    {
+      id: 3,
+      name: "occupation",
+      type: "select",
+      placeholder: "Occupation",
+      value: "",
+      pattern: "^[A-Za-z]{6,20}$",
+      err: "Must filled",
+      showError: false,
     },
   ]);
 
   const _handleChange = (value, index) => {
-    // value baru
-    const newInputs = { ...inputs[index], value };
-    // value lama
-    const newInputsArr = [...inputs];
-    // add to value baru
-    newInputsArr[index] = newInputs;
-    setInputs(newInputsArr);
+    const newInputs = inputs.map((input, i) => {
+      if (i === index) {
+        const isValid = new RegExp(input.pattern).test(value);
+        return { ...input, value, showError: !isValid };
+      }
+      return input;
+    });
+    setInputs(newInputs);
+
+    const valuesArr = newInputs.map((input) => input.value);
+    const newData = {
+      name: valuesArr[0],
+      username: valuesArr[1],
+      email: valuesArr[2],
+      password: valuesArr[3],
+      occupation: valuesArr[4],
+    };
+    setData(newData);
   };
 
   console.log(inputs);
 
   const _handleRegister = async (e) => {
     e.preventDefault();
-    if (inputs[0].value && inputs[1].value && inputs[2].value) {
-      const data = {
-        name: inputs[0].value,
-        email: inputs[1].value,
-        password: inputs[2].value,
-        role: ["users"],
-      };
-      setIsEmptyName(false);
-      setIsEmptyEmail(false);
-      setIsEmptyPassword(false);
+    if (
+      inputs[0].value &&
+      inputs[1].value &&
+      inputs[2].value &&
+      inputs[3].value &&
+      inputs[4].value
+    ) {
+      dispatch({ type: "REGISTER_START" });
       try {
-        await signUpWithFirebase(data).then((response) => {
-          console.log(response);
-          if (response) {
-            Swal.fire({
-              title: "Register Success",
-              confirmButtonColor: "#4C35E0",
-            }).then((result) => {
-              if (result.isConfirmed) {
-                navigate("/verify", { state: { data } });
-              }
-            });
-          }
+        const res = await axios.post("/auth/register", data);
+        dispatch({
+          type: "REGISTER_SUCCESS",
+          payload: res.data.details,
         });
-      } catch (error) {
-        if (error.response) {
-          Swal.fire({
-            title: "Register Failed",
-            text: error.response.data.message,
-            confirmButtonColor: "#4C35E0",
-          }).then((result) => {
-            if (result.isConfirmed) {
-              navigate("/register");
-            }
-          });
-        }
+        Swal.fire({
+          icon: "success",
+          title: "Registration Success",
+          text: "You have successfully registered! Please Check your email for verify account",
+        });
+        navigate("/login");
+      } catch (err) {
+        dispatch({ type: "REGISTER_FAIL", payload: err.response.data });
+        Swal.fire({
+          icon: "error",
+          title: "Registration Failed",
+          text: err.response.data.message,
+        });
       }
-    } else {
-      setIsEmptyName(true);
-      setIsEmptyEmail(true);
-      setIsEmptyPassword(true);
     }
   };
-  useEffect(() => {
-    if (inputs[0].value.match(inputs[0].pattern)) {
-      setIsEmptyName(false);
-    }
-    if (inputs[1].value.match(inputs[1].pattern)) {
-      setIsEmptyEmail(false);
-    }
-    if (inputs[2].value.match(inputs[2].pattern)) {
-      setIsEmptyPassword(false);
-    }
-  }, [inputs]);
+
   const backgroundImage = {
     backgroundImage: `url(${background})`,
     backgroundSize: "100% 100%",
@@ -131,30 +153,53 @@ export default function Register() {
         onSubmit={_handleRegister}
       >
         <div className="flex justify-center">{/* <Logo /> */}</div>
-        <h4 className="text-base mb-4  text-primary-gray">
-          Create Your Account
-        </h4>
+        <h4 className="text-2xl text-center mb-4">Create Your Account</h4>
         <p className="text-center text-error-red">{msg}</p>
         {inputs.map((input, inputIdx) => (
           <div key={inputIdx}>
-            <FormInput
-              className={`peer m-0 ${
-                isEmptyEmail || isEmptyName || isEmptyPassword
-                  ? "peer-invalid:visible border-primary-red border-2"
-                  : "peer-valid:visible border-secondary-softblue border-2"
-              }`}
-              {...input}
-              value={input.value}
-              required
-              type={
-                input.type === "password"
-                  ? isPasswordShown
-                    ? "text"
-                    : "password"
-                  : input.type
-              }
-              onChange={(e) => _handleChange(e.target.value, inputIdx)}
-            />
+            {input.name !== "occupation" ? (
+              <FormInput
+                {...input}
+                value={input.value}
+                pattern={input.pattern}
+                required
+                type={
+                  input.type === "password"
+                    ? isPasswordShown
+                      ? "text"
+                      : "password"
+                    : input.type
+                }
+                onChange={(e) => _handleChange(e.target.value, inputIdx)}
+                className={`peer m-0 ${
+                  input.showError
+                    ? "peer-invalid:visible border-primary-red border-2"
+                    : "peer-valid:visible border-secondary-softblue border-2"
+                }`}
+              />
+            ) : (
+              <FormSelectWrap
+                type={input.type}
+                pattern={input.pattern}
+                required
+                onChange={(e) => {
+                  console.log(e.target.value);
+                  _handleChange(e.target.value, inputIdx);
+                }}
+                className={`peer m-0 ${
+                  input.showError
+                    ? "peer-invalid:visible border-primary-red border-2"
+                    : "peer-valid:visible border-secondary-softblue border-2"
+                }`}
+              >
+                <option disabled selected>
+                  {input.placeholder}
+                </option>
+                <option value="mahasiswa">Mahasiswa</option>
+                <option value="dosen">Dosen</option>
+                <option value="others">Others</option>
+              </FormSelectWrap>
+            )}
 
             {input.type === "password" && (
               <span
@@ -165,41 +210,15 @@ export default function Register() {
               </span>
             )}
 
-            {input.name === "name" ? (
-              <p
-                className={`pb-2 ${
-                  isEmptyName
-                    ? "peer-invalid:visible text-primary-red invisible"
-                    : "invisible"
-                }  text-sm`}
-              >
-                {input.err}
-              </p>
-            ) : null}
-
-            {input.name === "email" ? (
-              <p
-                className={`pb-2 ${
-                  isEmptyEmail
-                    ? "peer-invalid:visible text-primary-red invisible"
-                    : "invisible"
-                }  text-sm`}
-              >
-                {input.err}
-              </p>
-            ) : null}
-
-            {input.name === "password" ? (
-              <p
-                className={`pb-2 ${
-                  isEmptyPassword
-                    ? "peer-invalid:visible text-primary-red invisible"
-                    : "invisible"
-                } text-sm`}
-              >
-                {input.err}
-              </p>
-            ) : null}
+            <p
+              className={`pb-2 ${
+                input.showError
+                  ? "peer-invalid:visible text-primary-red invisible"
+                  : "invisible"
+              }  text-sm`}
+            >
+              {input.err}
+            </p>
           </div>
         ))}
         <Button
@@ -211,7 +230,7 @@ export default function Register() {
         </Button>
         <p className="text-sm text-center mt-4">
           Have an account?{" "}
-          <Link to="/" className="font-bold text-primary-blue">
+          <Link to="/login" className="font-bold text-primary-blue">
             Login
           </Link>
         </p>
